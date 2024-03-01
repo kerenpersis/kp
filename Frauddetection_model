@@ -1,0 +1,64 @@
+import pandas as pd
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+
+# Load the dataset
+data = pd.read_csv('fraud_dataset.csv')
+
+#Missing Values
+imputer = SimpleImputer(strategy='mean')  # You can choose other strategies like median or most_frequent
+data[['feature_with_missing_values']] = imputer.fit_transform(data[['feature_with_missing_values']])
+
+#Multicolinearity
+X = data.drop(['isFraud', 'isFlaggedFraud'], axis=1)
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)  # Standardize the features
+pca = PCA(n_components=0.95)  # Choose number of components to explain 95% of variance
+X_pca = pca.fit_transform(X_scaled)
+
+
+#Outliers
+from scipy.stats.mstats import winsorize
+data['feature_winsorized'] = winsorize(data['feature'], limits=[0.05, 0.05])
+
+
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
+
+
+
+# Split the data into features (X) and target variable (y)
+X = data.drop(['isFraud', 'isFlaggedFraud'], axis=1)  # Features
+y = data['isFraud']  # Target variable
+
+# Convert categorical variables 
+X = pd.get_dummies(X)
+
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Train the logistic regression model
+model = LogisticRegression()
+model.fit(X_train, y_train)
+
+# Make predictions on the test set
+y_pred = model.predict(X_test)
+
+# Evaluate the model
+accuracy = accuracy_score(y_test, y_pred)
+precision = precision_score(y_test, y_pred)
+recall = recall_score(y_test, y_pred)
+f1 = f1_score(y_test, y_pred)
+conf_matrix = confusion_matrix(y_test, y_pred)
+
+print("Accuracy:", accuracy)
+print("Precision:", precision)
+print("Recall:", recall)
+print("F1 Score:", f1)
+print("Confusion Matrix:")
+print(conf_matrix)
+
+
+
